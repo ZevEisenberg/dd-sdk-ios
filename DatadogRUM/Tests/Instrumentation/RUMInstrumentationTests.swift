@@ -10,14 +10,14 @@ import TestUtilities
 @testable import DatadogRUM
 
 class RUMInstrumentationTests: XCTestCase {
+    private var config = RUMConfiguration(applicationID: .mockAny())
+
     func testWhenOnlyUIKitViewsPredicateIsConfigured_itInstrumentsUIViewController() throws {
         // When
         let instrumentation = RUMInstrumentation(
-            configuration: .init(
-                uiKitRUMViewsPredicate: UIKitRUMViewsPredicateMock(),
-                uiKitRUMUserActionsPredicate: nil,
-                longTaskThreshold: nil
-            ),
+            uiKitRUMViewsPredicate: UIKitRUMViewsPredicateMock(),
+            uiKitRUMActionsPredicate: nil,
+            longTaskThreshold: nil,
             dateProvider: SystemDateProvider()
         )
 
@@ -34,11 +34,9 @@ class RUMInstrumentationTests: XCTestCase {
     func testWhenOnlyUIKitActionsPredicateIsConfigured_itInstrumentsUIApplication() throws {
         // When
         let instrumentation = RUMInstrumentation(
-            configuration: .init(
-                uiKitRUMViewsPredicate: nil,
-                uiKitRUMUserActionsPredicate: UIKitRUMUserActionsPredicateMock(),
-                longTaskThreshold: nil
-            ),
+            uiKitRUMViewsPredicate: nil,
+            uiKitRUMActionsPredicate: UIKitRUMUserActionsPredicateMock(),
+            longTaskThreshold: nil,
             dateProvider: SystemDateProvider()
         )
 
@@ -52,11 +50,9 @@ class RUMInstrumentationTests: XCTestCase {
     func testWhenOnlyLongTasksThresholdIsConfigured_itInstrumentsRunLoop() throws {
         // When
         let instrumentation = RUMInstrumentation(
-            configuration: .init(
-                uiKitRUMViewsPredicate: nil,
-                uiKitRUMUserActionsPredicate: nil,
-                longTaskThreshold: 0.5
-            ),
+            uiKitRUMViewsPredicate: nil,
+            uiKitRUMActionsPredicate: nil,
+            longTaskThreshold: 0.5,
             dateProvider: SystemDateProvider()
         )
 
@@ -73,11 +69,9 @@ class RUMInstrumentationTests: XCTestCase {
     func testGivenAllInstrumentationsConfigured_whenSubscribed_itSetsSubsciberInRespectiveHandlers() throws {
         // Given
         let instrumentation = RUMInstrumentation(
-            configuration: .init(
-                uiKitRUMViewsPredicate: UIKitRUMViewsPredicateMock(),
-                uiKitRUMUserActionsPredicate: UIKitRUMUserActionsPredicateMock(),
-                longTaskThreshold: 0.5
-            ),
+            uiKitRUMViewsPredicate: UIKitRUMViewsPredicateMock(),
+            uiKitRUMActionsPredicate: UIKitRUMUserActionsPredicateMock(),
+            longTaskThreshold: 0.5,
             dateProvider: SystemDateProvider()
         )
         let subscriber = RUMCommandSubscriberMock()
