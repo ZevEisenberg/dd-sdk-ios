@@ -21,7 +21,7 @@ public struct FirstPartyHosts: Equatable {
         self.init(hostsWithTracingHeaderTypes: hostsWithTracingHeaderTypes)
     }
 
-    public init(
+    internal init(
         hostsWithTracingHeaderTypes: [String: Set<TracingHeaderType>],
         hostsSanitizer: HostsSanitizing = HostsSanitizer()
     ) {

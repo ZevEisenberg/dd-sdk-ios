@@ -17,7 +17,7 @@ public typealias RUMLongTaskEventMapper = (RUMLongTaskEvent) -> RUMLongTaskEvent
 
 public typealias URLSessionRUMAttributesProvider = (URLRequest, URLResponse?, Data?, Error?) -> [AttributeKey: AttributeValue]?
 
-public struct RUMConfiguration2 {
+public struct RUMConfiguration {
     /// An unique identifier of the RUM application in Datadog.
     public let applicationID: String
 
@@ -56,6 +56,14 @@ public struct RUMConfiguration2 {
         case average
         /// Collect mobile vitals every 1000ms.
         case rare
+
+        internal var timeInterval: TimeInterval {
+            switch self {
+            case .frequent: return 0.1
+            case .average:  return 0.5
+            case .rare:     return 1
+            }
+        }
     }
 
     public var vitalsUpdateFrequency: VitalsFrequency? = .average
@@ -93,33 +101,24 @@ public struct RUMConfiguration2 {
     /// An extra sampling rate for configuration telemetry events.
     ///
     /// It is applied on top of the value configured in public `telemetrySampleRate`.
-    internal lazy var configurationTelemetrySampleRate: Float = {
-        let `default`: Float = 20
-        return _internal.configurationTelemetrySampleRate ?? `default` // resolve against cross-platform config
-    }()
+    /// It can be overwritten by `InternalConfiguration`.
+    internal let defaultConfigurationTelemetrySampleRate: Float = 20.0
 
     internal var uuidGenerator: RUMUUIDGenerator = DefaultRUMUUIDGenerator()
 
     internal var dateProvider: DateProvider = SystemDateProvider()
 
-    internal var processInfo: ProcessInfo = .processInfo
+    /// Produces view update events' throttler for each started RUM view scope.
+    internal var viewUpdatesThrottlerFactory: () -> RUMViewUpdatesThrottlerType = { RUMViewUpdatesThrottler() }
 
-    internal lazy var debugging: Bool = {
-        return processInfo.arguments.contains("DD_DEBUG")
-    }()
-
-    internal lazy var viewDebugging: Bool = {
-        return processInfo.arguments.contains("DD_DEBUG_RUM")
-    }()
-//
-//    internal lazy var ciTestExecutionID: String? = {
-//        return processInfo.environment["CI_VISIBILITY_TEST_EXECUTION_ID"]
-//    }()
+    internal var debugSDK: Bool = ProcessInfo.processInfo.arguments.contains("DD_DEBUG")
+    internal var debugViews: Bool = ProcessInfo.processInfo.arguments.contains("DD_DEBUG_RUM")
+    internal var ciTestExecutionID: String? = ProcessInfo.processInfo.environment["CI_VISIBILITY_TEST_EXECUTION_ID"]
 }
 
 // MARK: - LEGACY 👵🏻
 
-public struct RUMConfiguration {
+public struct RUMConfiguration2 {
     public struct Instrumentation {
         public let uiKitRUMViewsPredicate: UIKitRUMViewsPredicate?
         public let uiKitRUMUserActionsPredicate: UIKitRUMUserActionsPredicate?

@@ -43,9 +43,9 @@ internal final class URLSessionRUMResourcesHandler: DatadogURLSessionHandler, RU
     // MARK: - Initialization
 
     init(
-        dateProvider: DateProvider = SystemDateProvider(),
-        rumAttributesProvider: URLSessionRUMAttributesProvider? = nil,
-        distributedTracing: DistributedTracing? = nil
+        dateProvider: DateProvider,
+        rumAttributesProvider: URLSessionRUMAttributesProvider?,
+        distributedTracing: DistributedTracing?
     ) {
         self.dateProvider = dateProvider
         self.rumAttributesProvider = rumAttributesProvider

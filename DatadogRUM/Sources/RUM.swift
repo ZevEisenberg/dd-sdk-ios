@@ -31,8 +31,35 @@ public struct RUM {
             )
         }
 
+        // Register RUM feature:
         let rum = try RUMFeature(in: core, configuration: configuration)
         try core.register(feature: rum)
+
+        // If resource tracking is configured, register URLSession Instrumentation feature:
+        if let urlSessionConfig = configuration.urlSessionTracking {
+            let urlSessionHandler = URLSessionRUMResourcesHandler(
+                dateProvider: configuration.dateProvider,
+                rumAttributesProvider: urlSessionConfig.resourceAttributesProvider,
+                distributedTracing: {
+                    guard let firstPartyHostsConfig = urlSessionConfig.firstPartyHosts else {
+                        return nil
+                    }
+                    return DistributedTracing(
+                        sampler: Sampler(samplingRate: configuration.debugSDK ? 100 : firstPartyHostsConfig.traceSampleRate),
+                        firstPartyHosts: FirstPartyHosts(firstPartyHostsConfig.hostsWithTraceHeaderTypes),
+                        traceIDGenerator: firstPartyHostsConfig.traceIDGenerator
+                    )
+                }()
+            )
+
+            urlSessionHandler.publish(to: rum.monitor)
+            try core.register(urlSessionHandler: urlSessionHandler)
+        }
+
+        if configuration.debugViews {
+            consolePrint("⚠️ Overriding RUM debugging with DD_DEBUG_RUM launch argument")
+            rum.monitor.debug = true
+        }
 
         rum.monitor.notifySDKInit()
     }
