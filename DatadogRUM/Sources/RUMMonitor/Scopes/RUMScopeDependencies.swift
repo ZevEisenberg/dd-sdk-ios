@@ -34,6 +34,23 @@ internal struct RUMScopeDependencies {
 }
 
 internal extension RUMScopeDependencies {
+    init(core: DatadogCoreProtocol, configuration: RUMConfiguration2) {
+        self.init(
+            core: core,
+            rumApplicationID: configuration.applicationID,
+            sessionSampler: Sampler(samplingRate: configuration.sessionSampleRate),
+            backgroundEventTrackingEnabled: configuration.backgroundEventsTracking,
+            frustrationTrackingEnabled: configuration.frustrationsTracking,
+            firstPartyHosts: configuration.urlSessionTracking?.firstPartyHosts,
+            eventBuilder: <#T##RUMEventBuilder#>,
+            rumUUIDGenerator: <#T##RUMUUIDGenerator#>,
+            ciTest: <#T##RUMCITest?#>,
+            viewUpdatesThrottlerFactory: <#T##() -> RUMViewUpdatesThrottlerType#>,
+            vitalsReaders: <#T##VitalsReaders?#>,
+            onSessionStart: <#T##RUMSessionListener?##RUMSessionListener?##(String, Bool) -> Void#>
+        )
+    }
+
     init(
         core: DatadogCoreProtocol,
         configuration: RUMConfiguration

@@ -120,10 +120,10 @@ extension FeaturesConfiguration {
                 longTaskThreshold: configuration.rumLongTaskDurationThreshold
             )
 
-            var configurationSampler = Sampler(samplingRate: 20)
-            if let internalConfigurationSampleRate = configuration.additionalConfiguration[CrossPlatformAttributes.telemetryConfigurationSampleRate] as? Float {
-                configurationSampler = Sampler(samplingRate: internalConfigurationSampleRate)
-            }
+            let configurationSampler = Sampler(samplingRate: 20)
+//            if let internalConfigurationSampleRate = configuration.additionalConfiguration[CrossPlatformAttributes.telemetryConfigurationSampleRate] as? Float {
+//                configurationSampler = Sampler(samplingRate: internalConfigurationSampleRate)
+//            }
 
             if let rumApplicationID = configuration.rumApplicationID {
                 rum = RUMConfiguration(

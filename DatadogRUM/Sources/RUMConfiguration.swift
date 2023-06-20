@@ -18,26 +18,23 @@ public typealias RUMLongTaskEventMapper = (RUMLongTaskEvent) -> RUMLongTaskEvent
 public typealias URLSessionRUMAttributesProvider = (URLRequest, URLResponse?, Data?, Error?) -> [AttributeKey: AttributeValue]?
 
 public struct RUMConfiguration2 {
-    /// An unique identifier of the RUM application in Datadog app.
+    /// An unique identifier of the RUM application in Datadog.
     public let applicationID: String
-
 
     public var sessionSampleRate: Float = 100.0
     public var telemetrySampleRate: Float = 20.0
-
-    public var viewEventMapper: RUMViewEventMapper? = nil
-    public var resourceEventMapper: RUMResourceEventMapper? = nil
-    public var actionEventMapper: RUMActionEventMapper? = nil
-    public var errorEventMapper: RUMErrorEventMapper? = nil
-    public var longTaskEventMapper: RUMLongTaskEventMapper? = nil
 
     public var uiKitViewsPredicate: UIKitRUMViewsPredicate? = nil
     public var uiKitActionsPredicate: UIKitRUMUserActionsPredicate? = nil
 
     public struct URLSessionTracking {
         public struct FirstPartyHosts {
-            public var hostsWithTraceHeaderTypes: [String: Set<TracingHeaderType>]
+            public var hostsWithTraceHeaderTypes: [String: Set<TracingHeaderType>] = [:]
             public var traceSampleRate: Float = 20.0
+
+            // MARK: - Internal
+
+            internal var traceIDGenerator: TraceIDGenerator = DefaultTraceIDGenerator()
         }
 
         public var firstPartyHosts: FirstPartyHosts? = nil
@@ -46,9 +43,11 @@ public struct RUMConfiguration2 {
 
     public var urlSessionTracking: URLSessionTracking? = nil
 
-    public var longTaskThreshold: TimeInterval? = nil
+    public var frustrationsTracking: Bool = true
+    public var backgroundEventsTracking: Bool = false
 
-    /// https://github.com/DataDog/dd-sdk-android/blob/feature/sdkv2/features/dd-sdk-android-rum/src/main/kotlin/com/datadog/android/rum/configuration/VitalsUpdateFrequency.kt
+    public var longTaskThreshold: TimeInterval? = 0.1
+
     /// Defines the frequency at which RUM collects mobile vitals, such as CPU and memory usage.
     public enum VitalsFrequency: String {
         /// Collect mobile vitals every 100ms.
@@ -57,43 +56,68 @@ public struct RUMConfiguration2 {
         case average
         /// Collect mobile vitals every 1000ms.
         case rare
-        /// Don't provide mobile vitals.
-        case never
     }
 
-    public var vitalsUpdateFrequency: VitalsFrequency = .average
+    public var vitalsUpdateFrequency: VitalsFrequency? = .average
 
-    public var frustrationsTracking: Bool = true
-    public var backgroundEventsTracking: Bool = false
+    public var viewEventMapper: RUMViewEventMapper? = nil
+    public var resourceEventMapper: RUMResourceEventMapper? = nil
+    public var actionEventMapper: RUMActionEventMapper? = nil
+    public var errorEventMapper: RUMErrorEventMapper? = nil
+    public var longTaskEventMapper: RUMLongTaskEventMapper? = nil
+
     public var sessionListener: RUMSessionListener? = nil
 
     public var customEndpoint: URL? = nil
 
+    // MARK: - Internal
+
     /// Grants access to an internal interface utilized only by Datadog cross-platform SDKs.
     /// **It is not meant for public use** and it might change without prior notice.
-    public var _internal = RUMInternalConfiguration()
+    public var _internal = InternalConfiguration()
+
+    /// An interface granting access to internal methods exclusively utilized by Datadog cross-platform SDKs.
+    /// **It is not meant for public use.**
+    ///
+    /// Methods, members, and functionality of this interface is subject to change without prior notice,
+    /// as they are not considered part of the public interface of the Datadog SDK.
+    public struct InternalConfiguration {
+        /// The sampling rate for configuration telemetry events. When set, it overwrites the value
+        /// of `configurationTelemetrySampleRate` in `RUMConfiguration`.
+        ///
+        /// It is mostly used to enable or disable telemetry events when running test scenarios.
+        /// Expects value between `0.0` and `100.0`.
+        public var configurationTelemetrySampleRate: Float? = nil
+    }
 
     /// An extra sampling rate for configuration telemetry events.
     ///
     /// It is applied on top of the value configured in public `telemetrySampleRate`.
-    /// It can be overwritten by cross-platform SDKs - see `RUMConfigurationInternal`.
-    internal let configurationTelemetrySampleRate: Float = 20.0
+    internal lazy var configurationTelemetrySampleRate: Float = {
+        let `default`: Float = 20
+        return _internal.configurationTelemetrySampleRate ?? `default` // resolve against cross-platform config
+    }()
+
+    internal var uuidGenerator: RUMUUIDGenerator = DefaultRUMUUIDGenerator()
+
+    internal var dateProvider: DateProvider = SystemDateProvider()
+
+    internal var processInfo: ProcessInfo = .processInfo
+
+    internal lazy var debugging: Bool = {
+        return processInfo.arguments.contains("DD_DEBUG")
+    }()
+
+    internal lazy var viewDebugging: Bool = {
+        return processInfo.arguments.contains("DD_DEBUG_RUM")
+    }()
+//
+//    internal lazy var ciTestExecutionID: String? = {
+//        return processInfo.environment["CI_VISIBILITY_TEST_EXECUTION_ID"]
+//    }()
 }
 
-/// An interface granting access to internal methods exclusively utilized by Datadog cross-platform SDKs.
-/// **It is not meant for public use.**
-///
-/// Methods, members, and functionality of this interface is subject to change without prior notice,
-/// as they are not considered part of the public interface of the Datadog SDK.
-public struct RUMInternalConfiguration {
-    /// The sampling rate for configuration telemetry events. When set, it overwrites the value
-    /// of `configurationTelemetrySampleRate` in `RUMConfiguration`.
-    ///
-    /// It is mostly used to enable or disable telemetry events when running test scenarios.
-    /// Expects value between `0.0` and `100.0`.
-    public var configurationTelemetrySampleRate: Float? = nil
-}
-
+// MARK: - LEGACY 👵🏻
 
 public struct RUMConfiguration {
     public struct Instrumentation {
@@ -116,7 +140,7 @@ public struct RUMConfiguration {
     /* ✅ internal */ public let applicationID: String
     /* ✅ internal */ public var sessionSampler: Sampler
     /* ✅ internal */ public var telemetrySampler: Sampler
-    /* ❌ internal */ public var configurationTelemetrySampler: Sampler
+    /* ❌☑️ internal */ public var configurationTelemetrySampler: Sampler
     /* ✅ internal */ public var viewEventMapper: RUMViewEventMapper?
     /* ✅ internal */ public var resourceEventMapper: RUMResourceEventMapper?
     /* ✅ internal */ public var actionEventMapper: RUMActionEventMapper?
@@ -129,15 +153,15 @@ public struct RUMConfiguration {
     /* ✅ internal */ public var onSessionStart: RUMSessionListener?
     /* ✅ internal */ public var firstPartyHosts: FirstPartyHosts?
     /* ✅ internal */ public var tracingSampler: Sampler
-    /* ❌ internal */ public var traceIDGenerator: TraceIDGenerator
+    /* ❌☑️ internal */ public var traceIDGenerator: TraceIDGenerator
     /// An optional RUM Resource attributes provider.
     /* ✅ internal */ public var rumAttributesProvider: URLSessionRUMAttributesProvider?
     /* ✅ internal */ public var vitalsFrequency: TimeInterval?
-    /* ❌ internal */ public var dateProvider: DateProvider
-    /* ❌ internal */ public var testExecutionId: String?
-    /* ❌ internal */ public var processInfo: ProcessInfo
+    /* ❌☑️ internal */ public var dateProvider: DateProvider
+    /* ❌☑️ internal */ public var testExecutionId: String?
+    /* ❌☑️ internal */ public var processInfo: ProcessInfo
 
-    let uuidGenerator: RUMUUIDGenerator
+    /* ❌☑️ internal */ let uuidGenerator: RUMUUIDGenerator
 
     public init(
         applicationID: String,
