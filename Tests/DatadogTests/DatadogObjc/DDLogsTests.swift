@@ -82,7 +82,7 @@ class DDLogsTests: XCTestCase {
         let feature: LogsFeature = .mockAny()
         try CoreRegistry.default.register(feature: feature)
 
-        let objcLogger = DDLogger.builder().build()
+        let objcLogger = DDLogger.create()
 
         objcLogger.debug("message")
         objcLogger.info("message")
@@ -104,7 +104,7 @@ class DDLogsTests: XCTestCase {
         let feature: LogsFeature = .mockAny()
         try CoreRegistry.default.register(feature: feature)
 
-        let objcLogger = DDLogger.builder().build()
+        let objcLogger = DDLogger.create()
 
         let error = NSError(domain: "UnitTest", code: 11_235, userInfo: [NSLocalizedDescriptionKey: "UnitTest error"])
 
@@ -136,7 +136,7 @@ class DDLogsTests: XCTestCase {
         let feature: LogsFeature = .mockAny()
         try CoreRegistry.default.register(feature: feature)
 
-        let objcLogger = DDLogger.builder().build()
+        let objcLogger = DDLogger.create()
 
         objcLogger.debug("message", attributes: ["foo": "bar"])
         objcLogger.info("message", attributes: ["foo": "bar"])
@@ -161,7 +161,7 @@ class DDLogsTests: XCTestCase {
         let feature: LogsFeature = .mockAny()
         try CoreRegistry.default.register(feature: feature)
 
-        let objcLogger = DDLogger.builder().build()
+        let objcLogger = DDLogger.create()
 
         objcLogger.addAttribute(forKey: "nsstring", value: NSString(string: "hello"))
         objcLogger.addAttribute(forKey: "nsbool", value: NSNumber(booleanLiteral: true))
@@ -203,7 +203,7 @@ class DDLogsTests: XCTestCase {
         let feature: LogsFeature = .mockAny()
         try CoreRegistry.default.register(feature: feature)
 
-        let objcLogger = DDLogger.builder().build()
+        let objcLogger = DDLogger.create()
 
         objcLogger.addAttribute(forKey: "foo", value: "bar")
         objcLogger.addAttribute(forKey: "bizz", value: "buzz")
@@ -223,6 +223,22 @@ class DDLogsTests: XCTestCase {
         logMatcher.assertValue(forKeyPath: "foo", equals: "bar")
         logMatcher.assertNoValue(forKey: "bizz")
         logMatcher.assertTags(equal: ["foo:bar", "foobar", "env:test", "version:1.2.3"])
+    }
+
+    func testItForwardsLoggerConfigurationToSwift() {
+        let objcConfig = DDLoggerConfiguration()
+        objcConfig.loggerName = "logger-name"
+        objcConfig.loggerName = "logger-name"
+        objcConfig.serviceName = "service-name"
+        objcConfig.sendNetworkInfo = true
+        objcConfig.sendLogsToDatadog = false
+        objcConfig.printLogsToConsole = true
+
+        XCTAssertEqual(objcConfig.configuration.loggerName, "logger-name")
+        XCTAssertEqual(objcConfig.configuration.serviceName, "service-name")
+        XCTAssertTrue(objcConfig.configuration.sendNetworkInfo)
+        XCTAssertFalse(objcConfig.configuration.sendLogsToDatadog)
+        XCTAssertNotNil(objcConfig.configuration.consoleLogFormat)
     }
 }
 // swiftlint:enable multiline_arguments_brackets

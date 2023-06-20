@@ -10,7 +10,7 @@ import DatadogLogs
 import DatadogTrace
 import DatadogRUM
 
-var logger: DatadogLogger!
+var logger: LoggerProtocol!
 var tracer: OTTracer { DatadogTracer.shared() }
 var rumMonitor: RUMMonitorProtocol { RUMMonitor.shared() }
 
@@ -41,11 +41,13 @@ class ExampleAppDelegate: UIResponder, UIApplicationDelegate {
         appConfiguration.testScenario?.configureFeatures()
 
         // Create Logger
-        logger = DatadogLogger.builder
-            .set(loggerName: "logger-name")
-            .sendNetworkInfo(true)
-            .printLogsToConsole(true, usingFormat: .shortWith(prefix: "[iOS App] "))
-            .build()
+        logger = Logger.create(
+            with: Logger.Configuration(
+                loggerName: "logger-name",
+                sendNetworkInfo: true,
+                consoleLogFormat: .shortWith(prefix: "[iOS App] ")
+            )
+        )
 
         logger.addAttribute(forKey: "device-model", value: UIDevice.current.model)
 

@@ -80,7 +80,7 @@ class DatadogLogsFeatureTests: XCTestCase {
         try core.register(feature: feature)
 
         // When
-        let logger = DatadogLogger.builder.build(in: core)
+        let logger = Logger.create(in: core)
         logger.debug(.mockAny())
 
         // Then
@@ -147,7 +147,7 @@ class DatadogLogsFeatureTests: XCTestCase {
         )
         try core.register(feature: feature)
 
-        let logger = DatadogLogger.builder.build(in: core)
+        let logger = Logger.create(in: core)
         logger.debug("log 1")
         logger.debug("log 2")
         logger.debug("log 3")

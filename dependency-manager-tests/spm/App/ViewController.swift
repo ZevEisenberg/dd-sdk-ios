@@ -11,7 +11,7 @@ import DatadogTrace
 import DatadogCrashReporting
 
 internal class ViewController: UIViewController {
-    private var logger: DatadogLogger! // swiftlint:disable:this implicitly_unwrapped_optional
+    private var logger: LoggerProtocol! // swiftlint:disable:this implicitly_unwrapped_optional
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,10 +28,12 @@ internal class ViewController: UIViewController {
 
         DatadogCrashReporter.initialize()
 
-        self.logger = DatadogLogger.builder
-            .sendLogsToDatadog(false)
-            .printLogsToConsole(true)
-            .build()
+        self.logger = Logger.create(
+            with: Logger.Configuration(
+                sendLogsToDatadog: false,
+                consoleLogFormat: .short
+            )
+        )
 
         DatadogTracer.initialize()
 
