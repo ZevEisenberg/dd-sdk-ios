@@ -26,7 +26,7 @@ public struct Logs {
         /// means all logs will be processed.
         ///
         /// By default sampling is disabled, meaning that all logs are being processed).
-        public var samplingRate: Float
+        public var sampleRate: Float
 
         /// Overrides the custom server endpoint where Logs are sent.
         public var customIntakeURL: URL?
