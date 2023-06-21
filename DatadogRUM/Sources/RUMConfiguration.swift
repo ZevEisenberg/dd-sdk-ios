@@ -15,38 +15,45 @@ public typealias RUMResourceEventMapper = (RUMResourceEvent) -> RUMResourceEvent
 public typealias RUMActionEventMapper = (RUMActionEvent) -> RUMActionEvent?
 public typealias RUMLongTaskEventMapper = (RUMLongTaskEvent) -> RUMLongTaskEvent?
 
-public typealias URLSessionRUMAttributesProvider = (URLRequest, URLResponse?, Data?, Error?) -> [AttributeKey: AttributeValue]?
+public typealias RUMResourceAttributesProvider = (URLRequest, URLResponse?, Data?, Error?) -> [AttributeKey: AttributeValue]?
 
 public struct RUMConfiguration {
     /// An unique identifier of the RUM application in Datadog.
     public let applicationID: String
 
-    public var sessionSampleRate: Float = 100.0
-    public var telemetrySampleRate: Float = 20.0
+    public var sessionSampleRate: Float
+    public var telemetrySampleRate: Float
 
-    public var uiKitViewsPredicate: UIKitRUMViewsPredicate? = nil
-    public var uiKitActionsPredicate: UIKitRUMUserActionsPredicate? = nil
+    public var uiKitViewsPredicate: UIKitRUMViewsPredicate?
+    public var uiKitActionsPredicate: UIKitRUMUserActionsPredicate?
+    public var urlSessionTracking: URLSessionTracking?
+
+    public var frustrationsTracking: Bool
+    public var backgroundEventsTracking: Bool
+
+    public var longTaskThreshold: TimeInterval?
+
+    public var vitalsUpdateFrequency: VitalsFrequency?
+
+    public var viewEventMapper: RUMViewEventMapper?
+    public var resourceEventMapper: RUMResourceEventMapper?
+    public var actionEventMapper: RUMActionEventMapper?
+    public var errorEventMapper: RUMErrorEventMapper?
+    public var longTaskEventMapper: RUMLongTaskEventMapper?
+
+    public var onSessionStart: RUMSessionListener?
+
+    public var customEndpoint: URL?
+
+    // MARK: - Nested Types
 
     public struct URLSessionTracking {
-        public struct FirstPartyHosts {
-            public var hostsWithTraceHeaderTypes: [String: Set<TracingHeaderType>] = [:]
-            public var traceSampleRate: Float = 20.0
+        public var firstPartyHosts: FirstPartyHosts?
+        public var resourceAttributesProvider: RUMResourceAttributesProvider?
 
-            // MARK: - Internal
-
-            internal var traceIDGenerator: TraceIDGenerator = DefaultTraceIDGenerator()
-        }
-
-        public var firstPartyHosts: FirstPartyHosts? = nil
-        public var resourceAttributesProvider: ((URLRequest, URLResponse?, Data?, Error?) -> [AttributeKey: AttributeValue]?)? = nil
+        /// Private init to avoid `invalid redeclaration of synthesized memberwise init(...:)` in extension.
+        private init() {}
     }
-
-    public var urlSessionTracking: URLSessionTracking? = nil
-
-    public var frustrationsTracking: Bool = true
-    public var backgroundEventsTracking: Bool = false
-
-    public var longTaskThreshold: TimeInterval? = 0.1
 
     /// Defines the frequency at which RUM collects mobile vitals, such as CPU and memory usage.
     public enum VitalsFrequency: String {
@@ -66,19 +73,7 @@ public struct RUMConfiguration {
         }
     }
 
-    public var vitalsUpdateFrequency: VitalsFrequency? = .average
-
-    public var viewEventMapper: RUMViewEventMapper? = nil
-    public var resourceEventMapper: RUMResourceEventMapper? = nil
-    public var actionEventMapper: RUMActionEventMapper? = nil
-    public var errorEventMapper: RUMErrorEventMapper? = nil
-    public var longTaskEventMapper: RUMLongTaskEventMapper? = nil
-
-    public var onSessionStart: RUMSessionListener? = nil
-
-    public var customEndpoint: URL? = nil
-
-    // MARK: - Internal
+    // MARK: - Additional Interface For Datadog Cross-Platform SDKs
 
     /// Grants access to an internal interface utilized only by Datadog cross-platform SDKs.
     /// **It is not meant for public use** and it might change without prior notice.
@@ -98,6 +93,8 @@ public struct RUMConfiguration {
         public var configurationTelemetrySampleRate: Float? = nil
     }
 
+    // MARK: - Internal
+
     /// An extra sampling rate for configuration telemetry events.
     ///
     /// It is applied on top of the value configured in public `telemetrySampleRate`.
@@ -105,6 +102,8 @@ public struct RUMConfiguration {
     internal let defaultConfigurationTelemetrySampleRate: Float = 20.0
 
     internal var uuidGenerator: RUMUUIDGenerator = DefaultRUMUUIDGenerator()
+
+    internal var traceIDGenerator: TraceIDGenerator = DefaultTraceIDGenerator()
 
     internal var dateProvider: DateProvider = SystemDateProvider()
 
@@ -115,3 +114,67 @@ public struct RUMConfiguration {
     internal var debugViews: Bool = ProcessInfo.processInfo.arguments.contains("DD_DEBUG_RUM")
     internal var ciTestExecutionID: String? = ProcessInfo.processInfo.environment["CI_VISIBILITY_TEST_EXECUTION_ID"]
 }
+
+extension RUMConfiguration.URLSessionTracking {
+    public struct FirstPartyHosts {
+        public var hostsWithTraceHeaderTypes: [String: Set<TracingHeaderType>] = [:]
+        public var traceSampleRate: Float
+
+        public init(
+            hostsWithTraceHeaderTypes: [String : Set<TracingHeaderType>],
+            traceSampleRate: Float = 20.0
+        ) {
+            self.hostsWithTraceHeaderTypes = hostsWithTraceHeaderTypes
+            self.traceSampleRate = traceSampleRate
+        }
+    }
+
+    public init(
+        firstPartyHosts: RUMConfiguration.URLSessionTracking.FirstPartyHosts? = nil,
+        resourceAttributesProvider: RUMResourceAttributesProvider? = nil
+    ) {
+        self.firstPartyHosts = firstPartyHosts
+        self.resourceAttributesProvider = resourceAttributesProvider
+    }
+}
+
+extension RUMConfiguration {
+    public init(
+        applicationID: String,
+        sessionSampleRate: Float = 100,
+        telemetrySampleRate: Float = 20,
+        uiKitViewsPredicate: UIKitRUMViewsPredicate? = nil,
+        uiKitActionsPredicate: UIKitRUMUserActionsPredicate? = nil,
+        urlSessionTracking: URLSessionTracking? = nil,
+        frustrationsTracking: Bool = true,
+        backgroundEventsTracking: Bool = false,
+        longTaskThreshold: TimeInterval? = 0.1,
+        vitalsUpdateFrequency: VitalsFrequency? = .average,
+        viewEventMapper: RUMViewEventMapper? = nil,
+        resourceEventMapper: RUMResourceEventMapper? = nil,
+        actionEventMapper: RUMActionEventMapper? = nil,
+        errorEventMapper: RUMErrorEventMapper? = nil,
+        longTaskEventMapper: RUMLongTaskEventMapper? = nil,
+        onSessionStart: RUMSessionListener? = nil,
+        customEndpoint: URL? = nil
+    ) {
+        self.applicationID = applicationID
+        self.sessionSampleRate = sessionSampleRate
+        self.telemetrySampleRate = telemetrySampleRate
+        self.uiKitViewsPredicate = uiKitViewsPredicate
+        self.uiKitActionsPredicate = uiKitActionsPredicate
+        self.urlSessionTracking = urlSessionTracking
+        self.frustrationsTracking = frustrationsTracking
+        self.backgroundEventsTracking = backgroundEventsTracking
+        self.longTaskThreshold = longTaskThreshold
+        self.vitalsUpdateFrequency = vitalsUpdateFrequency
+        self.viewEventMapper = viewEventMapper
+        self.resourceEventMapper = resourceEventMapper
+        self.actionEventMapper = actionEventMapper
+        self.errorEventMapper = errorEventMapper
+        self.longTaskEventMapper = longTaskEventMapper
+        self.onSessionStart = onSessionStart
+        self.customEndpoint = customEndpoint
+    }
+}
+

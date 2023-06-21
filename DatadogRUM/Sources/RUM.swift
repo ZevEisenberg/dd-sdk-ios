@@ -37,21 +37,24 @@ public struct RUM {
 
         // If resource tracking is configured, register URLSession Instrumentation feature:
         if let urlSessionConfig = configuration.urlSessionTracking {
+            var distributedTracing: DistributedTracing? = nil
+
+            // If first party hosts are configured, enable distributed for these hosts:
+            if let firstPartyHostsConfig = urlSessionConfig.firstPartyHosts {
+                distributedTracing = DistributedTracing(
+                    sampler: Sampler(samplingRate: configuration.debugSDK ? 100 : firstPartyHostsConfig.traceSampleRate),
+                    firstPartyHosts: FirstPartyHosts(firstPartyHostsConfig.hostsWithTraceHeaderTypes),
+                    traceIDGenerator: configuration.traceIDGenerator
+                )
+            }
+
             let urlSessionHandler = URLSessionRUMResourcesHandler(
                 dateProvider: configuration.dateProvider,
                 rumAttributesProvider: urlSessionConfig.resourceAttributesProvider,
-                distributedTracing: {
-                    guard let firstPartyHostsConfig = urlSessionConfig.firstPartyHosts else {
-                        return nil
-                    }
-                    return DistributedTracing(
-                        sampler: Sampler(samplingRate: configuration.debugSDK ? 100 : firstPartyHostsConfig.traceSampleRate),
-                        firstPartyHosts: FirstPartyHosts(firstPartyHostsConfig.hostsWithTraceHeaderTypes),
-                        traceIDGenerator: firstPartyHostsConfig.traceIDGenerator
-                    )
-                }()
+                distributedTracing: distributedTracing
             )
 
+            // Connect URLSession instrumentation to RUM monitor:
             urlSessionHandler.publish(to: rum.monitor)
             try core.register(urlSessionHandler: urlSessionHandler)
         }
@@ -61,6 +64,7 @@ public struct RUM {
             rum.monitor.debug = true
         }
 
+        // Do initial work:
         rum.monitor.notifySDKInit()
     }
 }

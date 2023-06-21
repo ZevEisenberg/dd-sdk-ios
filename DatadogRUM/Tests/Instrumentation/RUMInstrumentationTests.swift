@@ -66,6 +66,21 @@ class RUMInstrumentationTests: XCTestCase {
         }
     }
 
+    func testWhenLongTasksThresholdIsLessOrEqualZero_itDoesNotInstrumentsRunLoop() {
+        // When
+        let instrumentation = RUMInstrumentation(
+            uiKitRUMViewsPredicate: nil,
+            uiKitRUMActionsPredicate: nil,
+            longTaskThreshold: .mockRandom(min: -100, max: 0),
+            dateProvider: SystemDateProvider()
+        )
+
+        // Then
+        withExtendedLifetime(instrumentation) {
+            XCTAssertNil(instrumentation.longTasks)
+        }
+    }
+
     func testGivenAllInstrumentationsConfigured_whenSubscribed_itSetsSubsciberInRespectiveHandlers() throws {
         // Given
         let instrumentation = RUMInstrumentation(

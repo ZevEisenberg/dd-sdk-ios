@@ -69,7 +69,7 @@ internal final class RUMInstrumentation: RUMCommandPublisher {
             )
         }
 
-        if let threshold = longTaskThreshold {
+        if let threshold = longTaskThreshold, threshold > 0 {
             longTasks = LongTaskObserver(threshold: threshold, dateProvider: dateProvider)
         }
 

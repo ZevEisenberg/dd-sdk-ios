@@ -7,7 +7,6 @@
 import Foundation
 import DatadogInternal
 import DatadogLogs
-import DatadogRUM
 
 /// Datadog SDK configuration object.
 public class Datadog {
