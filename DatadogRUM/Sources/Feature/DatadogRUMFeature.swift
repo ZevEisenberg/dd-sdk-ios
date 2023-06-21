@@ -52,7 +52,7 @@ internal final class DatadogRUMFeature: DatadogRemoteFeature {
             ciTest: configuration.ciTestExecutionID.map { RUMCITest(testExecutionId: $0) },
             viewUpdatesThrottlerFactory: configuration.viewUpdatesThrottlerFactory,
             vitalsReaders: configuration.vitalsUpdateFrequency.map { VitalsReaders(frequency: $0.timeInterval) },
-            onSessionStart: configuration.sessionListener
+            onSessionStart: configuration.onSessionStart
         )
 
         try self.init(

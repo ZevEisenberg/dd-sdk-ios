@@ -334,9 +334,9 @@ class DDRUMMonitorTests: XCTestCase {
 
     func testSendingActionEvents() throws {
         RUM.enable(
-            with: .mockWith(
-                dateProvider: RelativeDateProvider(startingFrom: Date(), advancingBySeconds: 1)
-            ),
+            with: .mockWith {
+                $0.dateProvider = RelativeDateProvider(startingFrom: Date(), advancingBySeconds: 1)
+            },
             in: core
         )
 

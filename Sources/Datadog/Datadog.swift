@@ -199,12 +199,8 @@ public class Datadog {
             useProxy: configuration.common.proxyConfiguration != nil
         )
 
-        // First, initialize features:
-        if let rumConfiguration = configuration.rum {
-            RUM.enable(with: rumConfiguration, in: core)
-
-            CITestIntegration.active?.startIntegration()
-        }
+        // TODO: RUMM-2922 Move to RUM
+        CITestIntegration.active?.startIntegration()
 
         if let loggingConfiguration = configuration.logging {
             try DatadogLogger.initialise(

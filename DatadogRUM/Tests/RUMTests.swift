@@ -11,15 +11,18 @@ import TestUtilities
 
 class RUMTests: XCTestCase {
     private var core: FeatureRegistrationCoreMock! // swiftlint:disable:this implicitly_unwrapped_optional
-    private var config = RUMConfiguration(applicationID: .mockAny())
+    private var config: RUMConfiguration!
 
     override func setUpWithError() throws {
         core = FeatureRegistrationCoreMock()
+        config = RUMConfiguration(applicationID: .mockAny())
     }
 
     override func tearDown() {
         core = nil
+        config = nil
         XCTAssertEqual(FeatureRegistrationCoreMock.referenceCount, 0)
+        XCTAssertEqual(PassthroughCoreMock.referenceCount, 0)
     }
 
     func testWhenNotEnabled_thenRUMMonitorIsNotAvailable() {
@@ -215,4 +218,21 @@ class RUMTests: XCTestCase {
 //            )
 //        )
 //    }
+
+    func testWhenEnabled_itNotifiesInitialSessionID() {
+        let core = PassthroughCoreMock()
+
+        // Given
+        let expectation = self.expectation(description: "notify initial session")
+        config.onSessionStart = { sessionID, isDiscarded in
+            // Then
+            XCTAssertTrue(sessionID.matches(regex: .uuidRegex))
+            expectation.fulfill()
+        }
+
+        // When
+        RUM.enable(with: config, in: core)
+
+        waitForExpectations(timeout: 2.5)
+    }
 }

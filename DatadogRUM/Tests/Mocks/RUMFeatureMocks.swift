@@ -10,6 +10,21 @@ import DatadogInternal
 
 @testable import DatadogRUM
 
+extension RUMConfiguration {
+    static func mockAny() -> RUMConfiguration {
+        return .init(applicationID: .mockAny())
+    }
+
+    static func mockWith(
+        applicationID: String = .mockAny(),
+        mutation: (inout RUMConfiguration) -> Void
+    ) -> RUMConfiguration {
+        var config = RUMConfiguration(applicationID: applicationID)
+        mutation(&config)
+        return config
+    }
+}
+
 extension WebViewEventReceiver: AnyMockable {
     public static func mockAny() -> Self {
         .mockWith()

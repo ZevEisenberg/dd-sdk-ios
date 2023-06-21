@@ -107,13 +107,11 @@ extension FeaturesConfiguration {
     static func mockWith(
         common: Common = .mockAny(),
         logging: Logging? = .mockAny(),
-        rum: RUMConfiguration? = .mockAny(),
         tracingEnabled: Bool = .mockAny()
     ) -> Self {
         return .init(
             common: common,
             logging: logging,
-            rum: rum,
             tracingEnabled: tracingEnabled
         )
     }

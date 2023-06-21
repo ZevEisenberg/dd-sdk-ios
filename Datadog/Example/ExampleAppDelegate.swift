@@ -28,10 +28,6 @@ class ExampleAppDelegate: UIResponder, UIApplicationDelegate {
             return false
         }
 
-        var rc = RUMConfiguration2(applicationID: "")
-        rc.urlSessionTracking = .init()
-        
-
         var configuration = Datadog.Configuration
             .builderUsing(
                 rumApplicationID: Environment.readRUMApplicationID(),
