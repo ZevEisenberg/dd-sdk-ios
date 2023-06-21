@@ -52,7 +52,7 @@ final class CrashReportingCollectOrSendWithRUMScenario: CrashReportingBaseScenar
     }
 
     func configureFeatures() {
-        DatadogCrashReporter.initialize()
+        CrashReporter.enable()
     }
 }
 
@@ -64,6 +64,6 @@ final class CrashReportingCollectOrSendWithLoggingScenario: CrashReportingBaseSc
     }
 
     func configureFeatures() {
-        DatadogCrashReporter.initialize()
+        CrashReporter.enable()
     }
 }

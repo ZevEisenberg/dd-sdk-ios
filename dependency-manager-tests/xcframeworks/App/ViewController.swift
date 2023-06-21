@@ -26,7 +26,7 @@ internal class ViewController: UIViewController {
                 .build()
         )
 
-        DatadogCrashReporter.initialize()
+        CrashReporter.enable()
 
         self.logger = DatadogLogger.builder
             .sendLogsToDatadog(false)
